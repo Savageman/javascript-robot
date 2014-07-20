@@ -204,22 +204,6 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 		dijkstra_maj_cell_recursive(liste_stations[station][0], liste_stations[station][1], 0, true, true, true, true, true);
 	}
 	
-	var pcc_robot = pcc[robot_y][robot_x];
-	if (reserve_carburant < 30 && pcc_robot >= reserve_carburant - 1) {
-		if (typeof pcc[robot_y + 1] != 'undefined' && pcc[robot_y + 1][robot_x] < pcc_robot) {
-			return "H";
-		}
-		if (typeof pcc[robot_y - 1] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
-			return "B";
-		}
-		if (typeof pcc[robot_y][robot_x - 1] != 'undefined' && pcc[robot_y][robot_x - 1] < pcc_robot) {
-			return "G";
-		}
-		if (typeof pcc[robot_y][robot_x + 1] != 'undefined' && pcc[robot_y][robot_x + 1] < pcc_robot) {
-			return "D";
-		}
-	}
-	
 	console.log('maj station', count_recursive);
 	// On voit une station
 	if (CH.voit == 3) {
@@ -247,6 +231,23 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	if (CB.voit==2 && CB.dist <= reserve_carburant) { return 'B'; }
 	if (CG.voit==2 && CG.dist <= reserve_carburant) { return 'G'; }
 	if (CD.voit==2 && CD.dist <= reserve_carburant) { return 'D'; }
+	
+	
+	var pcc_robot = pcc[robot_y][robot_x];
+	if (reserve_carburant < 30 && pcc_robot >= reserve_carburant - 1) {
+		if (typeof pcc[robot_y + 1] != 'undefined' && pcc[robot_y + 1][robot_x] < pcc_robot) {
+			return "H";
+		}
+		if (typeof pcc[robot_y - 1] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
+			return "B";
+		}
+		if (typeof pcc[robot_y][robot_x - 1] != 'undefined' && pcc[robot_y][robot_x - 1] < pcc_robot) {
+			return "G";
+		}
+		if (typeof pcc[robot_y][robot_x + 1] != 'undefined' && pcc[robot_y][robot_x + 1] < pcc_robot) {
+			return "D";
+		}
+	}
 
 	// Une seule direction possible...
 	if (CD.dist + CB.dist + CG.dist == 3) { return 'H'; }
