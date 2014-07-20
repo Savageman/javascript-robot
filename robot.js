@@ -49,6 +49,7 @@
 // pcc = plus court chemin
 // tableau dijkstra
 var pcc = new Array();
+var astar_map = new Array();
 var liste_stations = new Array();
 
 function init_custom() {
@@ -79,6 +80,22 @@ function debug_pcc() {
 			}
 			document.getElementById('pcc_' + j + '_' + i).innerHTML = str;
 		}
+	}
+}
+function debug_astar(chemin) {
+	for (j = 0; j < hauteur_terrain; j++) {
+		for (i = 0; i < largeur_terrain; i++) {
+			var str = '';
+			if (astar_map[j][i] == 0) {
+				str += '<img src="img/obstacle.gif" />';
+			}
+			document.getElementById('astar_' + j + '_' + i).innerHTML = str;
+		}
+	}
+	var distance = 0;
+	for (cell in chemin) {
+		document.getElementById('astar_' + chemin[cell].x + '_' + chemin[cell].y).innerHTML = distance;
+		distance++;
 	}
 }
 init_custom();
@@ -153,6 +170,22 @@ function ajoute_station(j, i) {
 	}
 }
 
+function chemin_astar()
+{
+	// 1. On construit la carte pour l'algorithme
+	for (var j = 0; j < hauteur_terrain; j++) {
+		astar_map[j] = new Array();
+		for (var i = 0; i < largeur_terrain; i++) {
+			astar_map[j][i] = terrain_explore[j+1][i+1] == 1 ? 0 : 1;
+		}
+	}
+    var graph = new Graph(astar_map);
+    var start = graph.grid[robot_y - 1][robot_x - 1];
+    var end = graph.grid[but_y - 1][but_x - 1];
+    var result = astar.search(graph, start, end);
+	return result;
+}
+
 function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, reserve_carburant) {
 
 	count_recursive = 0;
@@ -193,7 +226,33 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	if (CH.dist + CG.dist + CD.dist == 3) { return 'B'; }
 	if (CH.dist + CD.dist + CB.dist == 3) { return 'G'; }
 	if (CH.dist + CG.dist + CB.dist == 3) { return 'D'; }
-
+	
+	var chemin = chemin_astar();
+	var prochain_x = chemin[0].y + 1;
+	var prochain_y = chemin[0].x + 1;
+	
+	debug_astar(chemin);
+	
+	console.log({
+		robot_x : robot_x,
+		robot_y : robot_y,
+		prochain_x : prochain_x,
+		prochain_y : prochain_y,
+	});
+	
+	if (prochain_x > robot_x) {
+		return "D";
+	}
+	if (prochain_x < robot_x) {
+		return "G";
+	}
+	if (prochain_y > robot_y) {
+		return "H";
+	}
+	if (prochain_y < robot_y) {
+		return "B";
+	}
+	
 	document.getElementById('debug').innerHTML =
 		'robot_x = '+robot_x+', robot_y = ' + robot_y + '<br />'
 		 + 'CH.voit = '+CH.voit+', CH.dist = '+CH.dist + '<br />'
@@ -203,8 +262,5 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 		 + ' but_dir_hb = ' + but_dir_hb + ', but_dir_gd = ' + but_dir_gd + '<br />'
 		 + ' but_dist = ' + but_dist + ', reserve_carburant = ' + reserve_carburant;
 
-	var ret = reserve_carburant % 2 == 0 ? "D" : "H";
-
-	return ret;
-
+	return reserve_carburant % 2 == 0 ? "D" : "H";
 }
