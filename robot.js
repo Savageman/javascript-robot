@@ -50,13 +50,16 @@
 // tableau dijkstra
 var pcc = new Array();
 var astar_map = new Array();
+var astar_weight = new Array();
 var liste_stations = new Array();
 
 function init_custom() {
 	for (j = hauteur_terrain; j >= 1; j--) {
 		pcc[j] = new Array();
+		astar_weight[j - 1] = new Array();
 		for (i = 1; i <= largeur_terrain; i++) {
 			pcc[j][i] = 99;
+			astar_weight[j - 1][i - 1] = 1;
 		}
 	}
 	debug_pcc();
@@ -184,7 +187,7 @@ function chemin_astar()
 			 * 2 = but
 			 * 3 = ressource
 			 * 4 = position du robot */
-			astar_map[j][i] = cell == 1  || cell == 3 ? 0 : 1;
+			astar_map[j][i] = cell == 1  || cell == 3 ? 0 : astar_weight[j][i];
 		}
 	}
     var graph = new Graph(astar_map);
@@ -256,24 +259,21 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	var prochain_y = chemin[0].x + 1;
 	
 	debug_astar(chemin);
-	
-	console.log({
-		robot_x : robot_x,
-		robot_y : robot_y,
-		prochain_x : prochain_x,
-		prochain_y : prochain_y,
-	});
-	
+		
 	if (prochain_x > robot_x) {
+		astar_weight[robot_y - 1][robot_x]++;
 		return "D";
 	}
 	if (prochain_x < robot_x) {
+		astar_weight[robot_y - 1][robot_x - 2]++;
 		return "G";
 	}
 	if (prochain_y > robot_y) {
+		astar_weight[robot_y][robot_x - 1]++;
 		return "H";
 	}
 	if (prochain_y < robot_y) {
+		astar_weight[robot_y - 2][robot_x - 1]++;
 		return "B";
 	}
 	
