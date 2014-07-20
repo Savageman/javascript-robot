@@ -1,4 +1,4 @@
-/*
+    /*
  * fonction à compléter, permettant de décider de la direction vers laquelle diriger votre robot.
  *
  * Il cherchera alors à se déplacer d'une case dans la direction décidée.
@@ -147,6 +147,8 @@ function Queue(){
 // tableau dijkstra
 var pcc = new Array();
 var pcc_mark = new Array();
+var astar_map = new Array();
+var astar_weight = new Array();
 var liste_stations = new Array();
 var cell_queue = new Queue();
 var cell_exists = new Queue();
@@ -154,8 +156,10 @@ var cell_exists = new Queue();
 function init_custom() {
 	for (j = hauteur_terrain; j >= 1; j--) {
 		pcc[j] = new Array();
+		astar_weight[j - 1] = new Array();
 		for (i = 1; i <= largeur_terrain; i++) {
 			pcc[j][i] = 99;
+			astar_weight[j - 1][i - 1] = 1;
 		}
 	}
 	debug_pcc();
@@ -197,6 +201,23 @@ function debug_pcc() {
 			}
 			document.getElementById('pcc_' + j + '_' + i).innerHTML = str;
 		}
+	}
+}
+
+function debug_astar(chemin) {
+	for (j = 0; j < hauteur_terrain; j++) {
+		for (i = 0; i < largeur_terrain; i++) {
+			var str = '';
+			if (astar_map[j][i] == 0) {
+				str += '<img src="img/obstacle.gif" />';
+			}
+			document.getElementById('astar_' + j + '_' + i).innerHTML = str;
+		}
+	}
+	var distance = 0;
+	for (cell in chemin) {
+		document.getElementById('astar_' + chemin[cell].x + '_' + chemin[cell].y).innerHTML = distance;
+		distance++;
 	}
 }
 
@@ -308,6 +329,29 @@ function ajoute_station(j, i) {
 		//dijkstra_maj_cell_recursive(j, i, 0, true, true, true, true);
         dijkstra_bfs_maj(j, i, 0);
 	}
+	return false;
+}
+
+function chemin_astar()
+{
+	// 1. On construit la carte pour l'algorithme
+	for (var j = 0; j < hauteur_terrain; j++) {
+		astar_map[j] = new Array();
+		for (var i = 0; i < largeur_terrain; i++) {
+			var cell = terrain_explore[j+1][i+1];
+			/* 0 = terrain vide
+			 * 1 = obstacle
+			 * 2 = but
+			 * 3 = ressource
+			 * 4 = position du robot */
+			astar_map[j][i] = cell == 1  || cell == 3 ? 0 : astar_weight[j][i];
+		}
+	}
+    var graph = new Graph(astar_map);
+    var start = graph.grid[robot_y - 1][robot_x - 1];
+    var end = graph.grid[but_y - 1][but_x - 1];
+    var result = astar.search(graph, start, end);
+	return result;
 }
 
 function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, reserve_carburant) {
@@ -346,13 +390,53 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	if (CB.voit==2 && CB.dist <= reserve_carburant) { return 'B'; }
 	if (CG.voit==2 && CG.dist <= reserve_carburant) { return 'G'; }
 	if (CD.voit==2 && CD.dist <= reserve_carburant) { return 'D'; }
+	
+	
+	var pcc_robot = pcc[robot_y][robot_x];
+	if (reserve_carburant < 30 && pcc_robot >= reserve_carburant - 1) {
+		if (typeof pcc[robot_y + 1] != 'undefined' && pcc[robot_y + 1][robot_x] < pcc_robot) {
+			return "H";
+		}
+		if (typeof pcc[robot_y - 1] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
+			return "B";
+		}
+		if (typeof pcc[robot_y][robot_x - 1] != 'undefined' && pcc[robot_y][robot_x - 1] < pcc_robot) {
+			return "G";
+		}
+		if (typeof pcc[robot_y][robot_x + 1] != 'undefined' && pcc[robot_y][robot_x + 1] < pcc_robot) {
+			return "D";
+		}
+	}
 
 	// Une seule direction possible...
 	if (CD.dist + CB.dist + CG.dist == 3) { return 'H'; }
 	if (CH.dist + CG.dist + CD.dist == 3) { return 'B'; }
 	if (CH.dist + CD.dist + CB.dist == 3) { return 'G'; }
 	if (CH.dist + CG.dist + CB.dist == 3) { return 'D'; }
-
+	
+	var chemin = chemin_astar();
+	var prochain_x = chemin[0].y + 1;
+	var prochain_y = chemin[0].x + 1;
+	
+	debug_astar(chemin);
+		
+	if (prochain_x > robot_x) {
+		astar_weight[robot_y - 1][robot_x]++;
+		return "D";
+	}
+	if (prochain_x < robot_x) {
+		astar_weight[robot_y - 1][robot_x - 2]++;
+		return "G";
+	}
+	if (prochain_y > robot_y) {
+		astar_weight[robot_y][robot_x - 1]++;
+		return "H";
+	}
+	if (prochain_y < robot_y) {
+		astar_weight[robot_y - 2][robot_x - 1]++;
+		return "B";
+	}
+	
 	document.getElementById('debug').innerHTML =
 		'robot_x = '+robot_x+', robot_y = ' + robot_y + '<br />'
 		 + 'CH.voit = '+CH.voit+', CH.dist = '+CH.dist + '<br />'
@@ -362,8 +446,5 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 		 + ' but_dir_hb = ' + but_dir_hb + ', but_dir_gd = ' + but_dir_gd + '<br />'
 		 + ' but_dist = ' + but_dist + ', reserve_carburant = ' + reserve_carburant;
 
-	var ret = reserve_carburant % 2 == 0 ? "D" : "H";
-
-	return ret;
-
+	return reserve_carburant % 2 == 0 ? "D" : "H";
 }

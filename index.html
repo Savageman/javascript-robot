@@ -1,4 +1,13 @@
-<SCRIPT TYPE="text/javascript">
+<script type="text/javascript" src="terrain_1.js"></script>
+
+<script type="text/javascript">
+
+	var copie_terrain = terrain;
+	var copie_but_x = but_x;
+	var copie_but_y = but_y;
+	var copie_robot_x = robot_x;
+	var copie_robot_y = robot_y;
+
     /* variables du jeu */
     var capacite_reservoir_carburant = 30; // en mL
 
@@ -9,71 +18,42 @@
     var robot_x, robot_y;
     var nb_coups, nb_coups_max, reserve_carburant;
     var timer;
+	
+	function init_terrain() {
+		
+		/* Terrain */
+		terrain = copie_terrain;
 
-    function init_terrain() {
-        /*
-         * définition du terrain
-         */
-        largeur_terrain = 25;
-        hauteur_terrain = 16;
+		/* coordonnées du but */
+		but_x = copie_but_x;
+		but_y = copie_but_y;
 
+		/* initialisation des coordonnées du robot */
+		robot_x = copie_robot_x;
+		robot_y = copie_robot_y;
 
-        /*
-         * Légende du terrain :
-         * 0 = terrain vide
-         * 1 = obstacle
-         * 2 = but
-         * 3 = ressource
-         * 4 = position du robot
-         * (attention : la case but et la case de départ du robot sont données plus loin)
-         */
-        terrain = new Array();
-        terrain[16] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0);
-        terrain[15] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0);
-        terrain[14] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0);
-        terrain[13] = new Array(1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0);
-        terrain[12] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0);
-        terrain[11] = new Array(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
-        terrain[10] = new Array(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        terrain[9] = new Array(1, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0);
-        terrain[8] = new Array(1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0);
-        terrain[7] = new Array(1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0);
-        terrain[6] = new Array(1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0);
-        terrain[5] = new Array(1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0);
-        terrain[4] = new Array(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0);
-        terrain[3] = new Array(1, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0);
-        terrain[2] = new Array(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        terrain[1] = new Array(1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		terrain[but_y][but_x] = 2;
+		terrain[robot_y][robot_x] = 4;
 
-        /* coordonnées du but */
-        but_x = 24;
-        but_y = 15;
+		/*
+		 * Construction du terrain exploré par le robot
+		 *
+		 * 9 = case inconnue du robot (jamais vue par l'un de ses capteurs)
+		 */
+		terrain_explore = new Array();
+		for (j = 1; j <= hauteur_terrain; j++) {
+			terrain_explore[j] = new Array();
+			for (i = 1; i <= largeur_terrain; i++) {
+				terrain_explore[j][i] = 9;
+			}
+		}
+		terrain_explore[but_y][but_x] = 2;
+		terrain_explore[robot_y][robot_x] = 4;
 
-        /* initialisation des coordonnées du robot */
-        robot_x = 6;
-        robot_y = 2;
+		nb_coups = 0;
+		nb_coups_max = largeur_terrain * hauteur_terrain * 10;
+	}
 
-        terrain[but_y][but_x] = 2;
-        terrain[robot_y][robot_x] = 4;
-
-        /*
-         * Construction du terrain exploré par le robot
-         *
-         * 9 = case inconnue du robot (jamais vue par l'un de ses capteurs)
-         */
-        terrain_explore = new Array();
-        for (j = 1; j <= hauteur_terrain; j++) {
-            terrain_explore[j] = new Array();
-            for (i = 1; i <= largeur_terrain; i++) {
-                terrain_explore[j][i] = 9;
-            }
-        }
-        terrain_explore[but_y][but_x] = 2;
-        terrain_explore[robot_y][robot_x] = 4;
-
-        nb_coups = 0;
-        nb_coups_max = largeur_terrain * hauteur_terrain * 10;
-    }
     init_terrain();
 
 
@@ -305,13 +285,34 @@
     </TABLE>
 </FORM>
 
-<TABLE style="margin:0 auto;">
+<TABLE style="display:inline-block; margin: 0 1em;">
+	<tr>
+		<th colspan="99">Dijkstra</th>
+	</tr>
     <SCRIPT TYPE="text/javascript">
         var str_img;
         for (j = hauteur_terrain; j >= 1; j--) {
             document.write("<TR>\n");
             for (i = 1; i <= largeur_terrain; i++) {
                 document.write('<TD ID="pcc_' + j + '_' + i + '" STYLE="background-image:url(\'img/fond.gif\');width:15px;height:15px;">');
+                document.write('&nbsp;');
+                document.write('</TD>\n');
+            }
+            document.write("</TR>");
+        }
+    </SCRIPT>
+</TABLE>
+
+<TABLE style="display:inline-block; margin: 0 1em;">
+    <tr>
+		<th colspan="99">A-Star</th>
+	</tr>
+	<SCRIPT TYPE="text/javascript">
+        var str_img;
+        for (j = hauteur_terrain - 1; j >= 0; j--) {
+            document.write("<TR>\n");
+            for (i = 0; i < largeur_terrain; i++) {
+                document.write('<TD ID="astar_' + j + '_' + i + '" STYLE="background-image:url(\'img/fond.gif\');width:15px;height:15px;">');
                 document.write('&nbsp;');
                 document.write('</TD>\n');
             }
@@ -509,4 +510,5 @@
     }
 
 </SCRIPT>
+<script type="text/javascript" src="astar.js"></script>
 <script type="text/javascript" src="robot.js"></script>
