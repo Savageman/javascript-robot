@@ -178,7 +178,13 @@ function chemin_astar()
 	for (var j = 0; j < hauteur_terrain; j++) {
 		astar_map[j] = new Array();
 		for (var i = 0; i < largeur_terrain; i++) {
-			astar_map[j][i] = terrain_explore[j+1][i+1] == 1 ? 0 : 1;
+			var cell = terrain_explore[j+1][i+1];
+			/* 0 = terrain vide
+			 * 1 = obstacle
+			 * 2 = but
+			 * 3 = ressource
+			 * 4 = position du robot */
+			astar_map[j][i] = cell == 1  || cell == 3 ? 0 : 1;
 		}
 	}
     var graph = new Graph(astar_map);
