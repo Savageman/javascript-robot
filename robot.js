@@ -294,7 +294,7 @@ function dijkstra_bfs_maj(y, x, dist, onlyUnknown) {
             if((pcc[step[0]][step[1]] < 99 /*&& !onlyUnknown*/) 
                     || (pcc[step[0]][step[1]] == 99)) {
                 /* If dist is lower */
-                console.log('Updating ' + step[0] + '/' + step[1] + ' to ' + step[2] + ' from ' + pcc[step[0]][step[1]] + ' to ' + step[2]);
+                //console.log('Updating ' + step[0] + '/' + step[1] + ' to ' + step[2] + ' from ' + pcc[step[0]][step[1]] + ' to ' + step[2]);
                 if(pcc[step[0]][step[1]] > step[2]) {
                     pcc[step[0]][step[1]] = step[2];
                 }
