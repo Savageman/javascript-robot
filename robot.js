@@ -240,7 +240,6 @@ function dijkstra_bfs_maj_ukn(y, x) {
 		min.push(pcc[y][x + 1]);
 	}
 	min = Math.min.apply(null, min);
-	//console.log(y, x, "=", min);
 	dijkstra_bfs_maj(y, x, min + 1, true);
 	return true;
 }
@@ -251,19 +250,19 @@ function dijkstra_bfs_maj_ukn(y, x) {
 function addToQueue(y, x, dist) {
     /* If node has not already been visited */
     if(pcc_mark[y][x] == false ) {
-        /* If it is not already on the list */
-        var cell = cell_exists.indexOf(y + '_' + x);
+        if(terrain_explore[y][x] != 1 && terrain_explore[y][x] != 9) {
+            /* If it is not already on the list */
+            var cell = cell_exists.indexOf(y + '_' + x);
 
-        if(cell == -1) {
-            //console.log('Adding to queue ' + y + '/' + x);
-            cell_exists.enqueue(y + '_' + x);
-            cell_queue.enqueue([y, x, dist]);
-        } else {
-            var  val = cell_queue.get(cell);
-            if(val[2] > dist) {
-                //console.log('Updating in queue ' + y + '/' + x);
-                val[2] = dist;
-                cell_queue.put(cell, val);
+            if(cell == -1) {
+                cell_exists.enqueue(y + '_' + x);
+                cell_queue.enqueue([y, x, dist]);
+            } else {
+                var  val = cell_queue.get(cell);
+                if(val[2] > dist) {
+                    val[2] = dist;
+                    cell_queue.put(cell, val);
+                }
             }
         }
     }
@@ -280,12 +279,9 @@ function dijkstra_bfs_maj(y, x, dist, onlyUnknown) {
     addToQueue(y, x, dist);
 
     while(!cell_queue.isEmpty()) {
-        //console.log(cell_queue.getLength());
         /* The working node */
-        //cell_queue.log();
         var step = cell_queue.dequeue();
         cell_exists.dequeue();
-        //cell_queue.log();
 
         /* The node is updated by the value */
         var texp = terrain_explore[step[0]][step[1]];
@@ -294,7 +290,6 @@ function dijkstra_bfs_maj(y, x, dist, onlyUnknown) {
             if((pcc[step[0]][step[1]] < 99 /*&& !onlyUnknown*/) 
                     || (pcc[step[0]][step[1]] == 99)) {
                 /* If dist is lower */
-                //console.log('Updating ' + step[0] + '/' + step[1] + ' to ' + step[2] + ' from ' + pcc[step[0]][step[1]] + ' to ' + step[2]);
                 if(pcc[step[0]][step[1]] > step[2]) {
                     pcc[step[0]][step[1]] = step[2];
                 }
@@ -361,7 +356,6 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 		dijkstra_bfs_maj(liste_stations[station][0], liste_stations[station][1], 0, true);
 	}
 	
-	//console.log('maj station', count_recursive);
 	// On voit une station
 	if (CH.voit == 3) {
 		ajoute_station(robot_y + CH.dist, robot_x);
@@ -375,13 +369,11 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	if (CG.voit == 3) {
 		ajoute_station(robot_y, robot_x - CG.dist);
 	}
-	//console.log('add station', count_recursive);
 
 	// Mise à jour case courante
 	//dijkstra_maj_unknown_cell(robot_y, robot_x);
     dijkstra_bfs_maj_ukn(robot_y, robot_x);
     
-	//console.log('robot', count_recursive);
 
 	debug_pcc();
 
