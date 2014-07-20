@@ -1,0 +1,675 @@
+<SCRIPT TYPE="text/javascript">
+    /* variables du jeu */
+    var capacite_reservoir_carburant = 30; // en mL
+
+    var i, j;
+
+    var terrain, terrain_explore, largeur_terrain, hauteur_terrain;
+    var but_x, but_y;
+    var robot_x, robot_y;
+    var nb_coups, nb_coups_max, reserve_carburant;
+    var timer;
+
+    function init_terrain() {
+        /*
+         * définition du terrain
+         */
+        largeur_terrain = 25;
+        hauteur_terrain = 16;
+
+
+        /*
+         * Légende du terrain :
+         * 0 = terrain vide
+         * 1 = obstacle
+         * 2 = but
+         * 3 = ressource
+         * 4 = position du robot
+         * (attention : la case but et la case de départ du robot sont données plus loin)
+         */
+        terrain = new Array();
+        terrain[16] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0);
+        terrain[15] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0);
+        terrain[14] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0);
+        terrain[13] = new Array(1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0);
+        terrain[12] = new Array(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0);
+        terrain[11] = new Array(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
+        terrain[10] = new Array(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        terrain[9] = new Array(1, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0);
+        terrain[8] = new Array(1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0);
+        terrain[7] = new Array(1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0);
+        terrain[6] = new Array(1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0);
+        terrain[5] = new Array(1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0);
+        terrain[4] = new Array(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0);
+        terrain[3] = new Array(1, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0);
+        terrain[2] = new Array(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        terrain[1] = new Array(1, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        /* coordonnées du but */
+        but_x = 24;
+        but_y = 15;
+
+        /* initialisation des coordonnées du robot */
+        robot_x = 6;
+        robot_y = 2;
+
+        terrain[but_y][but_x] = 2;
+        terrain[robot_y][robot_x] = 4;
+
+        /*
+         * Construction du terrain exploré par le robot
+         *
+         * 9 = case inconnue du robot (jamais vue par l'un de ses capteurs)
+         */
+        terrain_explore = new Array();
+        for (j = 1; j <= hauteur_terrain; j++) {
+            terrain_explore[j] = new Array();
+            for (i = 1; i <= largeur_terrain; i++) {
+                terrain_explore[j][i] = 9;
+            }
+        }
+        terrain_explore[but_y][but_x] = 2;
+        terrain_explore[robot_y][robot_x] = 4;
+
+        nb_coups = 0;
+        nb_coups_max = largeur_terrain * hauteur_terrain * 10;
+    }
+    init_terrain();
+
+
+    /******************************
+     * NE PAS MODIFIER CE QUI SUIT
+     *******************************/
+
+    function getImg(id) {
+        var resultat = "";
+        switch (id) {
+            case 1:
+                resultat = "http://esperat.fr/robot/obstacle.gif";
+                break;
+            case 2:
+                resultat = "http://esperat.fr/robot/but.gif";
+                break;
+            case 3:
+                resultat = "http://esperat.fr/robot/ressource.gif";
+                break;
+            case 4:
+                resultat = "http://esperat.fr/robot/robot.gif";
+                break;
+            case 9:
+                resultat = "http://esperat.fr/robot/inconnu.gif";
+                break;
+            default :
+                break;
+        }
+        return resultat;
+    }
+
+    // met à jour le terrain exploré par le robot en fonction de sa position
+    // si nécessaire, mettre à jour l'affichage (brouillard activé)
+    function explorerTerrain(rx, ry) {
+        function decouvrirCase(x, y) {
+            var str_img;
+            if (terrain_explore[y][x] == 9) {
+                terrain_explore[y][x] = terrain[y][x];
+                if (document.forms['main_form'].elements['chk_brouillard'].checked == true) {
+                    str_img = getImg(terrain[y][x]);
+                    if (str_img.length > 0)
+                        document.getElementById('case_' + y + '_' + x).innerHTML = '<IMG SRC="' + str_img + '">';
+                    else
+                        document.getElementById('case_' + y + '_' + x).innerHTML = '&nbsp;';
+                }
+            }
+        }
+
+// capteur_haut
+        for (j = ry + 1; (j <= hauteur_terrain && !terrain[j][rx]); j++) decouvrirCase(rx, j);
+        if (j <= hauteur_terrain) decouvrirCase(rx, j);
+        // capteur_bas
+        for (j = ry - 1; (j > 0 && !terrain[j][rx]); j--) decouvrirCase(rx, j);
+        if (j >= 1) decouvrirCase(rx, j);
+        // capteur gauche
+        for (i = rx - 1; (i > 0 && !terrain[ry][i]); i--) decouvrirCase(i, ry);
+        if (i >= 1) decouvrirCase(i, ry);
+        // capteur droit
+        for (i = rx + 1; (i <= largeur_terrain && !terrain[ry][i]); i++) decouvrirCase(i, ry);
+        if (i <= largeur_terrain) decouvrirCase(i, ry);
+    }
+
+    // fonction mettant à jour l'affichage du carburant
+    function MAJCarburant(nb_ml) {
+        document.getElementById('jauge_courante').height = nb_ml ? 2 * nb_ml : 1;
+        document.getElementById('div_jauge').innerHTML = nb_ml + '/' + capacite_reservoir_carburant + ' mL';
+    }
+
+    function MAJTerrain(brouillard_active) {
+        for (j = hauteur_terrain; j >= 1; j--) {
+            for (i = 1; i <= largeur_terrain; i++) {
+                if (brouillard_active)
+                    str_img = getImg(terrain_explore[j][i]);
+                else
+                    str_img = getImg(terrain[j][i]);
+                if (str_img.length > 0)
+                    document.getElementById('case_' + j + '_' + i).innerHTML = '<IMG SRC="' + str_img + '">';
+                else
+                    document.getElementById('case_' + j + '_' + i).innerHTML = '&nbsp;';
+            }
+        }
+    }
+
+    function MAJNbCoups(nb) {
+        document.getElementById('span_nb_coups').innerHTML = nb_coups;
+    }
+</SCRIPT>
+
+<TABLE ALIGN="center" CELLSPACING="0">
+    <TR>
+        <TD STYLE="padding-right:30px;font-size:24px;font-weight:bold;">Concours TJS.com : Robot Explorateur</TD>
+        <TD STYLE="padding:0px;"><IMG SRC="http://esperat.fr/robot/tete_70.gif"></TD>
+    </TR>
+</TABLE>
+<TABLE ALIGN="center">
+    <TR>
+        <TD>
+            <TABLE ALIGN="center" STYLE="border-width:1px;border-style:solid;border-color:#000000;" CELLSPACING="1">
+                <SCRIPT TYPE="text/javascript">
+                    <!--
+                    var str_img;
+
+                    for (j = hauteur_terrain; j >= 1; j--) {
+                        document.write("<TR>\n");
+                        for (i = 1; i <= largeur_terrain; i++) {
+                            document.write('<TD ID="case_' + j + '_' + i + '" STYLE="background-image:url(\'http://esperat.fr/robot/fond.gif\');width:15px;height:15px;">');
+                            str_img = getImg(terrain[j][i]);
+                            if (str_img.length > 0)
+                                document.write('<IMG SRC="' + str_img + '">');
+                            else
+                                document.write('&nbsp;');
+                            document.write('</TD>\n');
+
+                        }
+                        document.write("</TR>");
+                    }
+                    //-->
+                </SCRIPT>
+            </TABLE>
+        </TD>
+        <TD>
+            <TABLE ALIGN="center" CELLSPACING="0">
+                <TR>
+                    <TH>Carburant</TH>
+                </TR>
+            </TABLE>
+            <BR>
+            <TABLE ALIGN="center" STYLE="background-color:#FFD3DD;">
+                <TR>
+                    <TD STYLE="padding:7px;">
+                        <TABLE ALIGN="center" STYLE="border-width:1px;border-style:solid;border-color:#000000;"
+                               CELLSPACING="0">
+                            <TR>
+                                <TD ID="jauge_max" VALIGN="bottom" STYLE="padding:0px;">
+                                    <TABLE CELLSPACING="0">
+                                        <TR>
+                                            <TD ID="jauge_courante"
+                                                STYLE="background-color:#DD5577;width:10px;padding:0px;"></TD>
+                                        </TR>
+                                    </TABLE>
+                                </TD>
+                            </TR>
+                        </TABLE>
+                        <BR>
+                        <TABLE ALIGN="center">
+                            <TR>
+                                <TD STYLE="width:55px;">
+                                    <DIV ID="div_jauge"></DIV>
+                                </TD>
+                            </TR>
+                        </TABLE>
+                    </TD>
+                </TR>
+            </TABLE>
+        </TD>
+    </TR>
+</TABLE>
+<TABLE ALIGN="center" style="display:none;">
+    <TR>
+        <TH>L&eacute;gende
+    </TR>
+    </TR>
+    <TR>
+        <TD WIDTH="150">
+            <TABLE>
+                <TR>
+                    <TD><IMG SRC="http://esperat.fr/robot/fond.gif"></TD>
+                    <TD STYLE="text-align:left;">Terrain plat</TD>
+                </TR>
+                <TR>
+                    <TD STYLE="background-image:url(http://esperat.fr/robot/fond.gif);"><IMG
+                            SRC="http://esperat.fr/robot/robot.gif"></TD>
+                    <TD STYLE="text-align:left;">Le robot</TD>
+                </TR>
+                <TR>
+                    <TD STYLE="background-image:url(http://esperat.fr/robot/fond.gif);"><IMG
+                            SRC="http://esperat.fr/robot/but.gif"></TD>
+                    <TD STYLE="text-align:left;">La case &quot;but&quot;</TD>
+                </TR>
+                <TR>
+                    <TD STYLE="background-image:url(http://esperat.fr/robot/fond.gif);"><IMG
+                            SRC="http://esperat.fr/robot/obstacle.gif"></TD>
+                    <TD STYLE="text-align:left;">Obstacle</TD>
+                </TR>
+                <TR>
+                    <TD STYLE="background-image:url(http://esperat.fr/robot/fond.gif);"><IMG
+                            SRC="http://esperat.fr/robot/ressource.gif"></TD>
+                    <TD STYLE="text-align:left;">Ressource</TD>
+                </TR>
+                <TR>
+                    <TD STYLE="background-image:url(http://esperat.fr/robot/fond.gif);"><IMG
+                            SRC="http://esperat.fr/robot/inconnu.gif"></TD>
+                    <TD STYLE="text-align:left;">Terrain inconnu</TD>
+                </TR>
+
+            </TABLE>
+        </TD>
+    </TR>
+</TABLE>
+<FORM NAME="main_form">
+    <TABLE ALIGN="center">
+        <TR>
+            <TD><INPUT TYPE="button" NAME="btn_pap" VALUE="Pas à pas" onClick="action_robot();"></TD>
+            <TD><INPUT TYPE="button" NAME="btn_lancer" VALUE="Accéléré" onClick="lancer_jeu();"></TD>
+            <TD><INPUT TYPE="button" NAME="btn_pause" VALUE="Pause" onClick="clearInterval(timer);"></TD>
+            <TD><INPUT TYPE="button" NAME="btn_reset" VALUE="Recommencer"
+                       onClick="init_terrain();init_affichage();init_carburant();init_custom();"></TD>
+        </TR>
+    </TABLE>
+    <TABLE ALIGN="center">
+        <TR>
+            <TD><INPUT TYPE="checkbox" NAME="chk_brouillard" id="chk_brouillard" onClick="MAJTerrain(this.checked);"></TD>
+            <TD><label for="chk_brouillard">Afficher uniquement le terrain connu du robot</label></TD>
+        </TR>
+    </TABLE>
+    <TABLE ALIGN="center">
+        <TR>
+            <TH>Nombre de coups : <SPAN ID="span_nb_coups">0</SPAN></TH>
+            <TD>(
+                <SCRIPT TYPE="text/javascript">
+                    <!--
+                    document.write(nb_coups_max);
+                    //-->
+                </SCRIPT>
+                max.)
+            </TD>
+        </TR>
+    </TABLE>
+    </TABLE>
+</FORM>
+
+<TABLE style="margin:0 auto;">
+    <SCRIPT TYPE="text/javascript">
+        var str_img;
+        for (j = hauteur_terrain; j >= 1; j--) {
+            document.write("<TR>\n");
+            for (i = 1; i <= largeur_terrain; i++) {
+                document.write('<TD ID="pcc_' + j + '_' + i + '" STYLE="background-image:url(\'http://esperat.fr/robot/fond.gif\');width:15px;height:15px;">');
+                document.write('&nbsp;');
+                document.write('</TD>\n');
+            }
+            document.write("</TR>");
+        }
+    </SCRIPT>
+</TABLE>
+
+<div id="debug">debug</div>
+
+<SCRIPT TYPE="text/javascript">
+    explorerTerrain(robot_x, robot_y);
+
+    function init_carburant() {
+        reserve_carburant = capacite_reservoir_carburant;
+        document.getElementById('jauge_max').height = parseInt(2 * capacite_reservoir_carburant);
+        MAJCarburant(reserve_carburant);
+        document.forms['main_form'].elements['btn_pap'].disabled = false;
+        document.forms['main_form'].elements['btn_lancer'].disabled = false;
+        document.forms['main_form'].elements['btn_pause'].disabled = false;
+    }
+    init_carburant();
+
+    function init_affichage() {
+        var str_img;
+        explorerTerrain(robot_x, robot_y);
+        for (j = hauteur_terrain; j >= 1; j--) {
+            for (i = 1; i <= largeur_terrain; i++) {
+                if (document.forms['main_form'].elements['chk_brouillard'].checked)
+                    str_img = getImg(terrain_explore[j][i]);
+                else
+                    str_img = getImg(terrain[j][i]);
+                if (str_img.length > 0)
+                    document.getElementById('case_' + j + '_' + i).innerHTML = '<IMG SRC="' + str_img + '">';
+                else
+                    document.getElementById('case_' + j + '_' + i).innerHTML = '&nbsp;';
+            }
+        }
+        MAJNbCoups(nb_coups);
+    }
+
+    function Capteur(voit, dist) {
+        this.voit = voit;
+        this.dist = dist;
+    }
+
+    function deplacerRobot(x, y, new_x, new_y) {
+        terrain[y][x] = 0;
+        terrain[new_y][new_x] = 4;
+
+        terrain_explore[y][x] = 0;
+        terrain_explore[new_y][new_x] = 4;
+    }
+
+    var CH = new Capteur(1, 1);
+    var CB = new Capteur(1, 1);
+    var CG = new Capteur(1, 1);
+    var CD = new Capteur(1, 1);
+
+    var but_dir_hb, but_dir_gd, but_dist, dir;
+    var robot_x_voulu, robot_y_voulu;
+
+    function action_robot() {
+        // on récupère les informations dont le robot peut se servir (capteurs, etc.)
+
+        // capteur_haut
+        for (j = robot_y + 1; (j <= hauteur_terrain && !terrain[j][robot_x]); j++);
+        if (j > hauteur_terrain)
+            CH.voit = 1;
+        else
+            CH.voit = terrain[j][robot_x];
+        CH.dist = j - robot_y;
+
+        // capteur_bas
+        for (j = robot_y - 1; (j > 0 && !terrain[j][robot_x]); j--);
+        if (j <= 0)
+            CB.voit = 1;
+        else
+            CB.voit = terrain[j][robot_x];
+        CB.dist = robot_y - j;
+
+        // capteur gauche
+        for (i = robot_x - 1; (i > 0 && !terrain[robot_y][i]); i--);
+        if (i <= 0)
+        // bord du terrain = obstacle
+            CG.voit = 1;
+        else
+        // quelquechose sur le terrain
+            CG.voit = terrain[robot_y][i];
+        CG.dist = robot_x - i;
+
+        // capteur droit
+        for (i = robot_x + 1; (i <= largeur_terrain && !terrain[robot_y][i]); i++);
+        if (i > largeur_terrain)
+            CD.voit = 1;
+        else
+            CD.voit = terrain[robot_y][i];
+        CD.dist = i - robot_x;
+
+        if (but_y < robot_y) but_dir_hb = -1;
+        else if (but_y == robot_y) but_dir_hb = 0;
+        else but_dir_hb = 1;
+
+        if (but_x < robot_x) but_dir_gd = -1;
+        else if (but_x == robot_x) but_dir_gd = 0;
+        else but_dir_gd = 1;
+
+        but_dist = Math.abs(but_y - robot_y) + Math.abs(but_x - robot_x);
+
+        // on appelle la fonction qui gère les déplacements du robot
+        dir = decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, reserve_carburant)
+
+        /*
+         * si le déplacement est valide, on enregistre le déplacement en interne ou on met à jour les ressources
+         */
+
+        // on vérifie qu'on ne sorte pas des limites du terrain
+        robot_x_voulu = robot_x;
+        robot_y_voulu = robot_y;
+        switch (dir) {
+            case "H" :
+                if (robot_y < hauteur_terrain) robot_y_voulu = robot_y + 1;
+                break;
+            case "B" :
+                if (robot_y > 1)               robot_y_voulu = robot_y - 1;
+                break;
+            case "G" :
+                if (robot_x > 1)               robot_x_voulu = robot_x - 1;
+                break;
+            case "D" :
+                if (robot_x < largeur_terrain) robot_x_voulu = robot_x + 1;
+                break;
+            default :
+                // direction non valide : le robot ne bougera pas
+                break;
+        }
+
+// sur quel type de case le robot veut aller ?
+        switch (terrain[robot_y_voulu][robot_x_voulu]) {
+            // case vide ou but : on déplace le robot dessus
+            case 0 :
+            case 2 :
+                deplacerRobot(robot_x, robot_y, robot_x_voulu, robot_y_voulu);
+                // on affiche le déplacement
+                document.getElementById('case_' + robot_y + '_' + robot_x).innerHTML = '&nbsp;';
+                document.getElementById('case_' + robot_y_voulu + '_' + robot_x_voulu).innerHTML = '<IMG SRC="' + getImg(4) + '">';
+                robot_x = robot_x_voulu;
+                robot_y = robot_y_voulu;
+                // on met à jour le terrain connu du robot
+                explorerTerrain(robot_x, robot_y)
+                break;
+            // obstacle ou ressource : le robot reste sur sa case
+            case 1 :
+            case 3 :
+            default :
+                break;
+        }
+
+// on met à jour la qté de carburant et son affichage
+        if (terrain[robot_y_voulu][robot_x_voulu] == 3)
+            reserve_carburant = capacite_reservoir_carburant;
+        else
+            reserve_carburant--;
+        MAJCarburant(reserve_carburant);
+
+// détection de la fin de la partie
+        if (robot_x == but_x && robot_y == but_y) {
+            clearInterval(timer);
+            document.forms['main_form'].elements['btn_pap'].disabled = true;
+            document.forms['main_form'].elements['btn_lancer'].disabled = true;
+            document.forms['main_form'].elements['btn_pause'].disabled = true;
+            alert("Vous avez gagné : votre robot a atteint le but !");
+        }
+        else if (!reserve_carburant) {
+            clearInterval(timer);
+            document.forms['main_form'].elements['btn_pap'].disabled = true;
+            document.forms['main_form'].elements['btn_lancer'].disabled = true;
+            document.forms['main_form'].elements['btn_pause'].disabled = true;
+            alert("Vous avez perdu : votre robot n'a plus de carburant !");
+        }
+        else if (nb_coups > nb_coups_max) {
+            clearInterval(timer);
+            document.forms['main_form'].elements['btn_pap'].disabled = true;
+            document.forms['main_form'].elements['btn_lancer'].disabled = true;
+            document.forms['main_form'].elements['btn_pause'].disabled = true;
+            alert("Vous avez perdu : votre robot a dépassé " + nb_coups_max + " coups !");
+        }
+
+        nb_coups++;
+        MAJNbCoups(nb_coups);
+    }
+
+    function lancer_jeu() {
+        timer = setInterval("action_robot()", 1);
+    }
+
+</SCRIPT>
+<script>
+    // pcc = plus court chemin
+    // tableau dijkstra
+    var pcc = new Array();
+    var liste_stations = new Array();
+
+    function init_custom() {
+        for (j = hauteur_terrain; j >= 1; j--) {
+            pcc[j] = new Array();
+            for (i = 1; i <= largeur_terrain; i++) {
+                pcc[j][i] = 99;
+            }
+        }
+        debug_pcc();
+    }
+    function debug_pcc() {
+        for (j = hauteur_terrain; j >= 1; j--) {
+            for (i = 1; i <= largeur_terrain; i++) {
+                var str = '';
+                if (j == robot_y && i == robot_x) {
+                    str += '<strong>';
+                }
+				if (terrain_explore[j][i] == 9) {
+				    str += '<img src="http://esperat.fr/robot/inconnu.gif" />';
+				} else if (terrain_explore[j][i] == 1) {
+				    str += '<img src="http://esperat.fr/robot/obstacle.gif" />';
+				} else {
+					str += pcc[j][i] == 99 ? '.' : pcc[j][i];
+				}
+                if (j == robot_y && i == robot_x) {
+                    str += '</strong>';
+                }
+                document.getElementById('pcc_' + j + '_' + i).innerHTML = str;
+            }
+        }
+    }
+    init_custom();
+
+    function dijkstra_maj_cell_recursive(y, x, dist, toLeft, toRight, toTop, toBottom, onlyUnknown)
+    {
+        // OutOfBounds ou déjà plus court
+        if (y <= 0 || y > hauteur_terrain || x <= 0 || x > largeur_terrain) {
+            return;
+        }
+		if (onlyUnknown && dist > 0 && pcc[y][x] < 99) {
+			return;
+		}
+        var cell = terrain_explore[y][x];
+        // 1 = obstacle, 9 == inexploré
+        if (cell == 1 || cell == 9) {
+            return;
+        }
+
+		count_recursive++;
+
+		if (dist < pcc[y][x]) { 
+			pcc[y][x] = dist;
+		} else {
+			dist = pcc[y][x];
+		}
+
+        // Récursion
+        if (toTop && typeof pcc[y + 1] != 'undefined') {
+            dijkstra_maj_cell_recursive(y + 1, x, dist + 1, toLeft, toRight, toTop, false, onlyUnknown);
+        }
+        if (toBottom && typeof pcc[y - 1] != 'undefined') {
+            dijkstra_maj_cell_recursive(y - 1, x, dist + 1, toLeft, toRight, false, toBottom, onlyUnknown);
+        }
+        if (toLeft && typeof pcc[y][x - 1] != 'undefined') {
+            dijkstra_maj_cell_recursive(y, x - 1, dist + 1, toLeft, false, toTop, toBottom, onlyUnknown);
+        }
+        if (toRight && typeof pcc[y][x + 1] != 'undefined') {
+            dijkstra_maj_cell_recursive(y, x + 1, dist + 1, false, toRight, toTop, toBottom, onlyUnknown);
+        }
+    }
+
+    function dijkstra_maj_unknown_cell(y, x) {
+        if (pcc[y][x] < 99) {
+            //console.log('skip', y, x, pcc[y][x]);
+            //return false;
+        }
+        // Recherche du minimal adjacent
+        var min = [pcc[y][x]];
+        if (y > 1) {
+            min.push(pcc[y - 1][x]);
+        }
+        if (y < hauteur_terrain) {
+            min.push(pcc[y + 1][x]);
+        }
+        if (x > 1) {
+            min.push(pcc[y][x - 1]);
+        }
+        if (x < largeur_terrain) {
+            min.push(pcc[y][x + 1]);
+        }
+        min = Math.min.apply(null, min);
+		console.log(y, x, "=", min);
+        dijkstra_maj_cell_recursive(y, x, min + 1, true, true, true, true);
+        return true;
+    }
+	
+	function ajoute_station(j, i) {
+		if (typeof liste_stations[j + '_' + i] == 'undefined') {
+			liste_stations[j + '_' + i] = [j, i];
+			dijkstra_maj_cell_recursive(j, i, 0, true, true, true, true);
+		}
+	}
+	
+    function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, reserve_carburant) {
+
+		count_recursive = 0;
+		for (station in liste_stations) {
+			dijkstra_maj_cell_recursive(liste_stations[station][0], liste_stations[station][1], 0, true, true, true, true, true);
+		}
+		
+		console.log('maj station', count_recursive);
+        // On voit une station
+        if (CH.voit == 3) {
+            ajoute_station(robot_y + CH.dist, robot_x);
+        }
+        if (CB.voit == 3) {
+            ajoute_station(robot_y - CB.dist, robot_x);
+        }
+        if (CD.voit == 3) {
+            ajoute_station(robot_y, robot_x + CD.dist);
+        }
+        if (CG.voit == 3) {
+            ajoute_station(robot_y, robot_x - CG.dist);
+        }
+		console.log('add station', count_recursive);
+
+        // Mise à jour case courante
+        dijkstra_maj_unknown_cell(robot_y, robot_x);
+		console.log('robot', count_recursive);
+
+        debug_pcc();
+
+        // But visible et accessible => go
+        if (CH.voit==2 && CH.dist <= reserve_carburant) { return 'H'; }
+        if (CB.voit==2 && CB.dist <= reserve_carburant) { return 'B'; }
+        if (CG.voit==2 && CG.dist <= reserve_carburant) { return 'G'; }
+        if (CD.voit==2 && CD.dist <= reserve_carburant) { return 'D'; }
+
+        // Une seule direction possible...
+        if (CD.dist + CB.dist + CG.dist == 3) { return 'H'; }
+        if (CH.dist + CG.dist + CD.dist == 3) { return 'B'; }
+        if (CH.dist + CD.dist + CB.dist == 3) { return 'G'; }
+        if (CH.dist + CG.dist + CB.dist == 3) { return 'D'; }
+
+        document.getElementById('debug').innerHTML =
+            'robot_x = '+robot_x+', robot_y = ' + robot_y + '<br />'
+             + 'CH.voit = '+CH.voit+', CH.dist = '+CH.dist + '<br />'
+             +' CB.voit = '+CB.voit+', CB.dist = '+CB.dist + '<br />'
+             +' CG.voit = '+CG.voit+', CG.dist = '+CG.dist + '<br />'
+             +' CD.voit = '+CD.voit+', CD.dist = '+CD.dist + '<br />'
+             + ' but_dir_hb = ' + but_dir_hb + ', but_dir_gd = ' + but_dir_gd + '<br />'
+             + ' but_dist = ' + but_dist + ', reserve_carburant = ' + reserve_carburant;
+
+        var ret = reserve_carburant % 2 == 0 ? "D" : "H";
+
+        return ret;
+
+    }
+</script>
