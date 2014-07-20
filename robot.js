@@ -206,7 +206,7 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 		if (typeof pcc[robot_y + 1] != 'undefined' && pcc[robot_y + 1][robot_x] < pcc_robot) {
 			return "H";
 		}
-		if (typeof pcc[robot_y - 1][robot_x] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
+		if (typeof pcc[robot_y - 1] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
 			return "B";
 		}
 		if (typeof pcc[robot_y][robot_x - 1] != 'undefined' && pcc[robot_y][robot_x - 1] < pcc_robot) {
