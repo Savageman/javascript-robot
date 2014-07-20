@@ -167,7 +167,9 @@ function ajoute_station(j, i) {
 	if (typeof liste_stations[j + '_' + i] == 'undefined') {
 		liste_stations[j + '_' + i] = [j, i];
 		dijkstra_maj_cell_recursive(j, i, 0, true, true, true, true);
+		return true;
 	}
+	return false;
 }
 
 function chemin_astar()
@@ -191,6 +193,22 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	count_recursive = 0;
 	for (station in liste_stations) {
 		dijkstra_maj_cell_recursive(liste_stations[station][0], liste_stations[station][1], 0, true, true, true, true, true);
+	}
+	
+	var pcc_robot = pcc[robot_y][robot_x];
+	if (reserve_carburant < 30 && pcc_robot >= reserve_carburant - 1) {
+		if (typeof pcc[robot_y + 1] != 'undefined' && pcc[robot_y + 1][robot_x] < pcc_robot) {
+			return "H";
+		}
+		if (typeof pcc[robot_y - 1][robot_x] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
+			return "B";
+		}
+		if (typeof pcc[robot_y][robot_x - 1] != 'undefined' && pcc[robot_y][robot_x - 1] < pcc_robot) {
+			return "G";
+		}
+		if (typeof pcc[robot_y][robot_x + 1] != 'undefined' && pcc[robot_y][robot_x + 1] < pcc_robot) {
+			return "D";
+		}
 	}
 	
 	console.log('maj station', count_recursive);
