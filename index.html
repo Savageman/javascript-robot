@@ -24,11 +24,11 @@
 		/* Terrain */
 		terrain = copie_terrain;
 
-		/* coordonnées du but */
+		/* coordonnÃ©es du but */
 		but_x = copie_but_x;
 		but_y = copie_but_y;
 
-		/* initialisation des coordonnées du robot */
+		/* initialisation des coordonnÃ©es du robot */
 		robot_x = copie_robot_x;
 		robot_y = copie_robot_y;
 
@@ -36,7 +36,7 @@
 		terrain[robot_y][robot_x] = 4;
 
 		/*
-		 * Construction du terrain exploré par le robot
+		 * Construction du terrain explorÃ© par le robot
 		 *
 		 * 9 = case inconnue du robot (jamais vue par l'un de ses capteurs)
 		 */
@@ -85,8 +85,8 @@
         return resultat;
     }
 
-    // met à jour le terrain exploré par le robot en fonction de sa position
-    // si nécessaire, mettre à jour l'affichage (brouillard activé)
+    // met Ã  jour le terrain explorÃ© par le robot en fonction de sa position
+    // si nÃ©cessaire, mettre Ã  jour l'affichage (brouillard activÃ©)
     function explorerTerrain(rx, ry) {
         function decouvrirCase(x, y) {
             var str_img;
@@ -116,7 +116,7 @@
         if (i <= largeur_terrain) decouvrirCase(i, ry);
     }
 
-    // fonction mettant à jour l'affichage du carburant
+    // fonction mettant Ã  jour l'affichage du carburant
     function MAJCarburant(nb_ml) {
         document.getElementById('jauge_courante').height = nb_ml ? 2 * nb_ml : 1;
         document.getElementById('div_jauge').innerHTML = nb_ml + '/' + capacite_reservoir_carburant + ' mL';
@@ -256,8 +256,8 @@
 <FORM NAME="main_form">
     <TABLE ALIGN="center">
         <TR>
-            <TD><INPUT TYPE="button" NAME="btn_pap" VALUE="Pas à pas" onClick="action_robot();"></TD>
-            <TD><INPUT TYPE="button" NAME="btn_lancer" VALUE="Accéléré" onClick="lancer_jeu();"></TD>
+            <TD><INPUT TYPE="button" NAME="btn_pap" VALUE="Pas Ã  pas" onClick="action_robot();"></TD>
+            <TD><INPUT TYPE="button" NAME="btn_lancer" VALUE="AccÃ©lÃ©rÃ©" onClick="lancer_jeu();"></TD>
             <TD><INPUT TYPE="button" NAME="btn_pause" VALUE="Pause" onClick="clearInterval(timer);"></TD>
             <TD><INPUT TYPE="button" NAME="btn_reset" VALUE="Recommencer"
                        onClick="init_terrain();init_affichage();init_carburant();init_custom();"></TD>
@@ -376,7 +376,7 @@
     var robot_x_voulu, robot_y_voulu;
 
     function action_robot() {
-        // on récupère les informations dont le robot peut se servir (capteurs, etc.)
+        // on rÃ©cupÃ¨re les informations dont le robot peut se servir (capteurs, etc.)
 
         // capteur_haut
         for (j = robot_y + 1; (j <= hauteur_terrain && !terrain[j][robot_x]); j++);
@@ -422,14 +422,14 @@
 
         but_dist = Math.abs(but_y - robot_y) + Math.abs(but_x - robot_x);
 
-        // on appelle la fonction qui gère les déplacements du robot
+        // on appelle la fonction qui gÃ¨re les dÃ©placements du robot
         dir = decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, reserve_carburant)
 
         /*
-         * si le déplacement est valide, on enregistre le déplacement en interne ou on met à jour les ressources
+         * si le dÃ©placement est valide, on enregistre le dÃ©placement en interne ou on met Ã  jour les ressources
          */
 
-        // on vérifie qu'on ne sorte pas des limites du terrain
+        // on vÃ©rifie qu'on ne sorte pas des limites du terrain
         robot_x_voulu = robot_x;
         robot_y_voulu = robot_y;
         switch (dir) {
@@ -452,16 +452,16 @@
 
 // sur quel type de case le robot veut aller ?
         switch (terrain[robot_y_voulu][robot_x_voulu]) {
-            // case vide ou but : on déplace le robot dessus
+            // case vide ou but : on dÃ©place le robot dessus
             case 0 :
             case 2 :
                 deplacerRobot(robot_x, robot_y, robot_x_voulu, robot_y_voulu);
-                // on affiche le déplacement
+                // on affiche le dÃ©placement
                 document.getElementById('case_' + robot_y + '_' + robot_x).innerHTML = '&nbsp;';
                 document.getElementById('case_' + robot_y_voulu + '_' + robot_x_voulu).innerHTML = '<IMG SRC="' + getImg(4) + '">';
                 robot_x = robot_x_voulu;
                 robot_y = robot_y_voulu;
-                // on met à jour le terrain connu du robot
+                // on met Ã  jour le terrain connu du robot
                 explorerTerrain(robot_x, robot_y)
                 break;
             // obstacle ou ressource : le robot reste sur sa case
@@ -471,20 +471,20 @@
                 break;
         }
 
-// on met à jour la qté de carburant et son affichage
+// on met Ã  jour la qtÃ© de carburant et son affichage
         if (terrain[robot_y_voulu][robot_x_voulu] == 3)
             reserve_carburant = capacite_reservoir_carburant;
         else
             reserve_carburant--;
         MAJCarburant(reserve_carburant);
 
-// détection de la fin de la partie
+// dÃ©tection de la fin de la partie
         if (robot_x == but_x && robot_y == but_y) {
             clearInterval(timer);
             document.forms['main_form'].elements['btn_pap'].disabled = true;
             document.forms['main_form'].elements['btn_lancer'].disabled = true;
             document.forms['main_form'].elements['btn_pause'].disabled = true;
-            alert("Vous avez gagné : votre robot a atteint le but !");
+            alert("Vous avez gagnÃ© : votre robot a atteint le but !");
         }
         else if (!reserve_carburant) {
             clearInterval(timer);
@@ -498,7 +498,7 @@
             document.forms['main_form'].elements['btn_pap'].disabled = true;
             document.forms['main_form'].elements['btn_lancer'].disabled = true;
             document.forms['main_form'].elements['btn_pause'].disabled = true;
-            alert("Vous avez perdu : votre robot a dépassé " + nb_coups_max + " coups !");
+            alert("Vous avez perdu : votre robot a dÃ©passÃ© " + nb_coups_max + " coups !");
         }
 
         nb_coups++;
