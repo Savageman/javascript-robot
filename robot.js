@@ -45,102 +45,7 @@
  * - le robot aura consommé 1 mL de carburant
  */
 
-/*
 
-Queue.js
-
-A function to represent a queue
-
-Created by Stephen Morley - http://code.stephenmorley.org/ - and released under
-the terms of the CC0 1.0 Universal legal code:
-
-http://creativecommons.org/publicdomain/zero/1.0/legalcode
-
-*/
-
-/* Creates a new queue. A queue is a first-in-first-out (FIFO) data structure -
- * items are added to the end of the queue and removed from the front.
- */
-function Queue(){
-
-  // initialise the queue and offset
-  var queue  = [];
-  var offset = 0;
-
-  // Returns the length of the queue.
-  this.getLength = function(){
-    return (queue.length - offset);
-  }
-
-  // Returns true if the queue is empty, and false otherwise.
-  this.isEmpty = function(){
-    return (queue.length == 0);
-  }
-
-  /* Enqueues the specified item. The parameter is:
-   *
-   * item - the item to enqueue
-   */
-  this.enqueue = function(item){
-    queue.push(item);
-  }
-
-  /* Dequeues an item and returns it. If the queue is empty, the value
-   * 'undefined' is returned.
-   */
-  this.dequeue = function(){
-
-    // if the queue is empty, return immediately
-    if (queue.length == 0) return undefined;
-
-    // store the item at the front of the queue
-    var item = queue[offset];
-
-    // increment the offset and remove the free space if necessary
-    if (++ offset * 2 >= queue.length){
-      queue  = queue.slice(offset);
-      offset = 0;
-    }
-
-    // return the dequeued item
-    return item;
-
-  }
-
-  /* Returns the item at the front of the queue (without dequeuing it). If the
-   * queue is empty then undefined is returned.
-   */
-  this.peek = function(){
-    return (queue.length > 0 ? queue[offset] : undefined);
-  }
-
-  /* Returns the index of an element */
-  this.indexOf = function(lookup) {
-      var idx = queue.indexOf(lookup, offset) - offset;
-      return (idx < 0 ? -1 : idx);
-  }
-
-  this.get = function(index) {
-      return queue[index + offset];
-  }
-
-  this.put = function(index, val) {
-      queue[index + offset] = val;
-  }
-
-  this.reset = function() {
-      while(!this.isEmpty()) {
-          this.dequeue();
-      }
-  }
-
-  this.log = function() {
-      console.log('length = ' + this.getLength() +
-              ' offset = ' + offset +
-              ' queue = ' + queue);
-  }
-}
-/* END Queue.js */
 
 
 // pcc = plus court chemin
@@ -166,22 +71,23 @@ function init_custom() {
 }
 
 function init_mark() {
-    for(j = 1; j <= hauteur_terrain; j++) {
-        pcc_mark[j] = new Array();
+	for(j = 1; j <= hauteur_terrain; j++) {
+		pcc_mark[j] = new Array();
 		for (i = 1; i <= largeur_terrain; i++) {
 			pcc_mark[j][i] = false;
 		}
-    }
+	}
 }
 
 function reset_mark() {
-    for(j = 1; j <= hauteur_terrain; j++) {
+	for(j = 1; j <= hauteur_terrain; j++) {
 		for (i = 1; i <= largeur_terrain; i++) {
 			pcc_mark[j][i] = false;
 		}
-    }
+	}
 }
 
+/* Debug procedures */
 function debug_pcc() {
 	for (j = hauteur_terrain; j >= 1; j--) {
 		for (i = 1; i <= largeur_terrain; i++) {
@@ -220,6 +126,7 @@ function debug_astar(chemin) {
 		distance++;
 	}
 }
+/* End of debug */
 
 init_custom();
 init_mark();
@@ -283,16 +190,12 @@ function dijkstra_bfs_maj(y, x, dist, onlyUnknown) {
         var step = cell_queue.dequeue();
         cell_exists.dequeue();
 
-        /* The node is updated by the value */
-        var texp = terrain_explore[step[0]][step[1]];
-        if(texp != 1 && texp != 9) {
-            /* If no value in cell */
-            if((pcc[step[0]][step[1]] < 99 /*&& !onlyUnknown*/) 
-                    || (pcc[step[0]][step[1]] == 99)) {
-                /* If dist is lower */
-                if(pcc[step[0]][step[1]] > step[2]) {
-                    pcc[step[0]][step[1]] = step[2];
-                }
+        /* If no value in cell */
+        if((pcc[step[0]][step[1]] < 99 /*&& !onlyUnknown*/) 
+            || (pcc[step[0]][step[1]] == 99)) {
+            /* If dist is lower */
+            if(pcc[step[0]][step[1]] > step[2]) {
+                pcc[step[0]][step[1]] = step[2];
             }
         }
 
@@ -322,7 +225,7 @@ function ajoute_station(j, i) {
 	if (typeof liste_stations[j + '_' + i] == 'undefined') {
 		liste_stations[j + '_' + i] = [j, i];
 		//dijkstra_maj_cell_recursive(j, i, 0, true, true, true, true);
-        dijkstra_bfs_maj(j, i, 0);
+		dijkstra_bfs_maj(j, i, 0);
 	}
 	return false;
 }
