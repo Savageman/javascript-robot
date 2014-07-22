@@ -1,4 +1,4 @@
-    /*
+/*
  * fonction à compléter, permettant de décider de la direction vers laquelle diriger votre robot.
  *
  * Il cherchera alors à se déplacer d'une case dans la direction décidée.
@@ -50,38 +50,36 @@
 
 // pcc = plus court chemin
 // tableau dijkstra
-var pcc = new Array();
-var pcc_mark = new Array();
-var astar_map = new Array();
-var astar_weight = new Array();
-var liste_stations = new Array();
+var pcc = [];
+var pcc_mark = [];
+var astar_map = [];
+var astar_fake_wall_list = [];
+var liste_stations = [];
 var cell_queue = new Queue();
 var cell_exists = new Queue();
 
 function init_custom() {
-	for (j = hauteur_terrain; j >= 1; j--) {
-		pcc[j] = new Array();
-		astar_weight[j - 1] = new Array();
-		for (i = 1; i <= largeur_terrain; i++) {
+	for (var j = hauteur_terrain; j >= 1; j--) {
+		pcc[j] = [];
+		for (var i = 1; i <= largeur_terrain; i++) {
 			pcc[j][i] = 99;
-			astar_weight[j - 1][i - 1] = 1;
 		}
 	}
 	debug_pcc();
 }
 
 function init_mark() {
-	for(j = 1; j <= hauteur_terrain; j++) {
-		pcc_mark[j] = new Array();
-		for (i = 1; i <= largeur_terrain; i++) {
+	for(var j = 1; j <= hauteur_terrain; j++) {
+		pcc_mark[j] = [];
+		for (var i = 1; i <= largeur_terrain; i++) {
 			pcc_mark[j][i] = false;
 		}
 	}
 }
 
 function reset_mark() {
-	for(j = 1; j <= hauteur_terrain; j++) {
-		for (i = 1; i <= largeur_terrain; i++) {
+	for(var j = 1; j <= hauteur_terrain; j++) {
+		for (var i = 1; i <= largeur_terrain; i++) {
 			pcc_mark[j][i] = false;
 		}
 	}
@@ -89,8 +87,8 @@ function reset_mark() {
 
 /* Debug procedures */
 function debug_pcc() {
-	for (j = hauteur_terrain; j >= 1; j--) {
-		for (i = 1; i <= largeur_terrain; i++) {
+	for (var j = hauteur_terrain; j >= 1; j--) {
+		for (var i = 1; i <= largeur_terrain; i++) {
 			var str = '';
 			if (j == robot_y && i == robot_x) {
 				str += '<strong>';
@@ -111,8 +109,8 @@ function debug_pcc() {
 }
 
 function debug_astar(chemin) {
-	for (j = 0; j < hauteur_terrain; j++) {
-		for (i = 0; i < largeur_terrain; i++) {
+	for (var j = 0; j < hauteur_terrain; j++) {
+		for (var i = 0; i < largeur_terrain; i++) {
 			var str = '';
 			if (astar_map[j][i] == 0) {
 				str += '<img src="img/obstacle.gif" />';
@@ -120,11 +118,11 @@ function debug_astar(chemin) {
 			document.getElementById('astar_' + j + '_' + i).innerHTML = str;
 		}
 	}
-	var distance = 0;
-	for (cell in chemin) {
-		document.getElementById('astar_' + chemin[cell].x + '_' + chemin[cell].y).innerHTML = distance;
-		distance++;
-	}
+    var distance = 0;
+   	for (var cell in chemin) {
+   		document.getElementById('astar_' + chemin[cell].x + '_' + chemin[cell].y).innerHTML = distance;
+   		distance++;
+   	}
 }
 /* End of debug */
 
@@ -202,8 +200,8 @@ function dijkstra_bfs_maj(y, x, dist, onlyUnknown) {
         pcc_mark[step[0]][step[1]] = true;
 
         /* Adding all the neighbour to the queue */
-        var x = step[1];
-        var y = step[0];
+        x = step[1];
+        y = step[0];
         var d = step[2] + 1;
 
         if(typeof pcc[y + 1] != 'undefined') {
@@ -230,11 +228,13 @@ function ajoute_station(j, i) {
 	return false;
 }
 
-function chemin_astar()
+function chemin_astar(to_y, to_x)
 {
+    to_y = to_y || but_y;
+    to_x = to_x || but_x;
 	// 1. On construit la carte pour l'algorithme
 	for (var j = 0; j < hauteur_terrain; j++) {
-		astar_map[j] = new Array();
+		astar_map[j] = [];
 		for (var i = 0; i < largeur_terrain; i++) {
 			var cell = terrain_explore[j+1][i+1];
 			/* 0 = terrain vide
@@ -242,20 +242,45 @@ function chemin_astar()
 			 * 2 = but
 			 * 3 = ressource
 			 * 4 = position du robot */
-			astar_map[j][i] = cell == 1  || cell == 3 ? 0 : astar_weight[j][i];
+            if (astar_fake_wall_list[(j+1)+'_'+(i+1)]) {
+                astar_map[j][i] = 0;
+            } else if (cell == 1  || cell == 3) {
+                // 1=wall, 3=fuel_station
+                astar_map[j][i] = 0;
+            } else {
+                astar_map[j][i] = 1;
+            }
 		}
 	}
     var graph = new Graph(astar_map);
     var start = graph.grid[robot_y - 1][robot_x - 1];
-    var end = graph.grid[but_y - 1][but_x - 1];
-    var result = astar.search(graph, start, end);
-	return result;
+    var end = graph.grid[to_y - 1][to_x - 1];
+    return astar.search(graph, start, end);
+}
+
+function find_nearest_explorable_cell()
+{
+    for (var distance = 1; distance < 15; distance++) {
+        var min_j = Math.max(1, robot_y - distance);
+        var max_j = Math.min(hauteur_terrain, robot_y + distance);
+        var min_i = Math.max(1, robot_x - distance);
+        var max_i = Math.min(largeur_terrain, robot_x + distance);
+        for (var j = min_j; j <= max_j; j++) {
+            for (var i = min_i; i <= max_i; i++) {
+                if (terrain_explore[j][i] == 9 && pcc[j][i] == 99) {
+                    var path = chemin_astar(j, i);
+                    if (path.length > 0) {
+                        return { x:path[0].y + 1, y: path[0].x + 1 };
+                    }
+                }
+            }
+        }
+    }
 }
 
 function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, reserve_carburant) {
 
-	count_recursive = 0;
-	for (station in liste_stations) {
+	for (var station in liste_stations) {
 		dijkstra_bfs_maj(liste_stations[station][0], liste_stations[station][1], 0, true);
 	}
 	
@@ -276,9 +301,17 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	// Mise à jour case courante
 	//dijkstra_maj_unknown_cell(robot_y, robot_x);
     dijkstra_bfs_maj_ukn(robot_y, robot_x);
-    
 
 	debug_pcc();
+
+    var debug_pcc_wall = {};
+    for (var astar_wall_index in astar_fake_wall_list) {
+        var astar_wall = astar_fake_wall_list[astar_wall_index];
+        debug_pcc_wall[astar_wall_index] = pcc[astar_wall.y][astar_wall.x];
+        if (pcc[astar_wall.y][astar_wall.x] < 15) {
+            delete astar_fake_wall_list[astar_wall_index];
+        }
+    }
 
 	// But visible et accessible => go
 	if (CH.voit==2 && CH.dist <= reserve_carburant) { return 'H'; }
@@ -286,21 +319,27 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	if (CG.voit==2 && CG.dist <= reserve_carburant) { return 'G'; }
 	if (CD.voit==2 && CD.dist <= reserve_carburant) { return 'D'; }
 	
-	
 	var pcc_robot = pcc[robot_y][robot_x];
 	if (reserve_carburant < 30 && pcc_robot >= reserve_carburant - 1) {
+        var backtrack = false;
+
 		if (typeof pcc[robot_y + 1] != 'undefined' && pcc[robot_y + 1][robot_x] < pcc_robot) {
-			return "H";
+			backtrack = "H";
 		}
 		if (typeof pcc[robot_y - 1] != 'undefined' && pcc[robot_y - 1][robot_x] < pcc_robot) {
-			return "B";
+            backtrack = "B";
 		}
 		if (typeof pcc[robot_y][robot_x - 1] != 'undefined' && pcc[robot_y][robot_x - 1] < pcc_robot) {
-			return "G";
+            backtrack = "G";
 		}
 		if (typeof pcc[robot_y][robot_x + 1] != 'undefined' && pcc[robot_y][robot_x + 1] < pcc_robot) {
-			return "D";
+            backtrack = "D";
 		}
+        // If we reached the maximum possible distance, then add a fake wall for the a-star algorithm and try a new path
+        if (backtrack && pcc_robot == capacite_reservoir_carburant / 2) {
+            astar_fake_wall_list[robot_y + '_' + robot_x] = {x:robot_x, y:robot_y};
+        }
+        return backtrack;
 	}
 
 	// Une seule direction possible...
@@ -309,28 +348,32 @@ function decider_direction(CH, CB, CG, CD, but_dir_hb, but_dir_gd, but_dist, res
 	if (CH.dist + CD.dist + CB.dist == 3) { return 'G'; }
 	if (CH.dist + CG.dist + CB.dist == 3) { return 'D'; }
 	
-	var chemin = chemin_astar();
-	var prochain_x = chemin[0].y + 1;
-	var prochain_y = chemin[0].x + 1;
-	
-	debug_astar(chemin);
-		
-	if (prochain_x > robot_x) {
-		astar_weight[robot_y - 1][robot_x]++;
-		return "D";
-	}
-	if (prochain_x < robot_x) {
-		astar_weight[robot_y - 1][robot_x - 2]++;
-		return "G";
-	}
-	if (prochain_y > robot_y) {
-		astar_weight[robot_y][robot_x - 1]++;
-		return "H";
-	}
-	if (prochain_y < robot_y) {
-		astar_weight[robot_y - 2][robot_x - 1]++;
-		return "B";
-	}
+	var chemin = chemin_astar(but_y, but_x);
+    var prochain_x = 0;
+   	var prochain_y = 0;
+    if (chemin.length > 0) {
+        prochain_x = chemin[0].y + 1;
+       	prochain_y = chemin[0].x + 1;
+        debug_astar(chemin);
+    } else {
+        // No path found => exploration
+        var nearest_explorable_cell = find_nearest_explorable_cell();
+        prochain_x = nearest_explorable_cell.x;
+        prochain_y = nearest_explorable_cell.y;
+    }
+
+   	if (prochain_x > robot_x) {
+   		return "D";
+   	}
+   	if (prochain_x < robot_x) {
+   		return "G";
+   	}
+   	if (prochain_y > robot_y) {
+   		return "H";
+   	}
+   	if (prochain_y < robot_y) {
+   		return "B";
+   	}
 	
 	document.getElementById('debug').innerHTML =
 		'robot_x = '+robot_x+', robot_y = ' + robot_y + '<br />'
