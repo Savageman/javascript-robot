@@ -321,6 +321,23 @@
     </SCRIPT>
 </TABLE>
 
+<TABLE style="display:inline-block; margin: 0 1em;">
+	<tr>
+		<th colspan="99">Dijkstra Goal</th>
+	</tr>
+    <SCRIPT TYPE="text/javascript">
+        var str_img;
+        for (j = hauteur_terrain; j >= 1; j--) {
+            document.write("<TR>\n");
+            for (i = 1; i <= largeur_terrain; i++) {
+                document.write('<TD ID="pcc_goal_' + j + '_' + i + '" STYLE="background-image:url(\'img/fond.gif\');width:15px;height:15px;">');
+                document.write('&nbsp;');
+                document.write('</TD>\n');
+            }
+            document.write("</TR>");
+        }
+    </SCRIPT>
+</TABLE>
 <div id="debug">debug</div>
 
 <SCRIPT TYPE="text/javascript">
