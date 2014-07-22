@@ -6,4 +6,6 @@ http://toutjavascript.com/robot/ a lancé en novembre 2003 le concours "Robot ex
 Ceci est une participation posthume "pour le fun" à titre de défi.
 
 
+gh-pages @ http://savageman.github.io/javascript-robot/
+
 
